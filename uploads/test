@@ -1,0 +1,6 @@
+While both projects involve building HTTP-based services
+and have CRUD (Create, Read, Update, Delete) operations,
+the focus and use cases are different. The file sharing
+service is more oriented toward handling binary data (files)
+and managing ownership through tokens, allowing
+users to share and access files without requiring user registration.
