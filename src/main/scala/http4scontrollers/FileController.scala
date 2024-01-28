@@ -1,7 +1,7 @@
-// Import necessary libraries
 package http4scontrollers
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import org.http4s.MediaType
 import cats.effect.IO
 import fs2.Stream
@@ -14,13 +14,11 @@ import tokens.TokenQueryParamMatcher
 import tokens.TokenQueryParamMatcher._
 import database.DatabaseManager._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.file.{Files, Paths}
 import scala.util.Random
 
 object FileController {
-  private val fileStoragePath = "uploads/"
-  private var filename: String = _
+  private val fileStoragePath = "uploads"
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "upload" =>
@@ -30,11 +28,11 @@ object FileController {
         m.parts.collect {
           case part if part.filename.isDefined =>
             // Extract the filename from the file part.
-            val filename = part.filename.get
+            val uploadedFilename = part.filename.get
 
             // Construct the file path using a combination of user-provided filename and a unique identifier.
             val uniqueIdentifier = generateRandomFileName()
-            val filePath = s"$fileStoragePath$uniqueIdentifier-$filename"
+            val filePath = s"$fileStoragePath/$uniqueIdentifier-$uploadedFilename"
 
             // Write the content of the file part to the specified file path.
             part.body
@@ -42,25 +40,25 @@ object FileController {
               .compile
               .drain
 
-            val token = generateRandomToken(filename)
+            val token = generateRandomToken(uploadedFilename, filePath)
 
             // Store file information in the database
-            storeToken(filename, token, filePath)
+            storeToken(uploadedFilename, token, filePath)
 
             // Respond with a success message indicating the uploaded filename.
-            Ok(s"File uploaded successfully: $filename")
+            Ok(s"File uploaded successfully: $uploadedFilename")
         }.headOption.getOrElse(BadRequest("No file part found"))
       }
 
     case GET -> Root / "download" / filename :? TokenQueryParamMatcher(token) =>
       // Check token validity here
+      val filePath = s"$fileStoragePath/$filename"
       val validityCheck: IO[Boolean] = IO.fromFuture(IO(isValidToken(token, filename, filePath)))
 
       val contentType = `Content-Type`(MediaType.application.`octet-stream`)
 
       validityCheck.flatMap { isValid =>
         if (isValid) {
-          val filePath = s"$fileStoragePath$filename"
           if (Files.exists(Paths.get(filePath))) {
             val contentDisposition = `Content-Disposition`("attachment", Map(ci"name" -> filename))
 
@@ -85,12 +83,13 @@ object FileController {
 
     case GET -> Root / "generateToken" =>
       // Generate a random token
-      val token = generateRandomToken(filename)
+      val filename = generateRandomFileName()
+      val uniqueIdentifier = generateRandomFileName()
+      val filePath = s"$fileStoragePath/$uniqueIdentifier-$filename"
+      val token = generateRandomToken(filename, filePath)
 
       // Respond with the generated token
       Ok(s"Generated Token: $token")
-
-
   }
 
   private def generateRandomFileName(): String = {
@@ -98,12 +97,10 @@ object FileController {
     s"file_$randomString"
   }
 
-  private def generateRandomToken(filename: String): String = {
+  private def generateRandomToken(filename: String, filePath: String): String = {
     val token = Random.alphanumeric.take(10).mkString
     // Store the pair (filename, token) in the database
-    storeToken(filename, token)
+    storeToken(filename, token, filePath)
     token
   }
-
-
 }
