@@ -16,5 +16,6 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-effect" % "3.5.2",
   "org.mongodb.scala" %% "mongo-scala-driver" % "4.9.0",
   "com.softwaremill.sttp.tapir" %% "tapir-core" % "1.9.8",
-  "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "1.4.0"
+  "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "1.4.0",
+  "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "1.2.10"
 )

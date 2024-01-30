@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object DatabaseManager {
   // MongoDB connection settings
-  private val connectionString = "mongodb://localhost:27017"
+  private val connectionString = "mongodb+srv://engaezik:63850342enga@cluster0.goiqv0u.mongodb.net/"
   private val databaseName = "tokens_organization"
   private val collectionName = "tokens"
 
@@ -34,7 +34,7 @@ object DatabaseManager {
   }
 
   def isValidToken(filename: String, token: String, path: String): Future[Boolean] = {
-    val filter = and(equal("filename", filename), equal("token", token), equal("path", path))
+    val filter = and(equal("filename", filename), equal("token", token))
     val countFuture: Future[Long] = collection.countDocuments(filter).toFuture()
     countFuture.map { count =>
       count > 0

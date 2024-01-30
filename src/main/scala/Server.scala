@@ -1,17 +1,15 @@
-import cats.effect.{ExitCode, IO}
-import http4scontrollers.FileController.allRoutes
-import org.http4s.server.blaze.BlazeServerBuilder
+// src/main/scala/Server.scala
+import cats.effect.{ExitCode, IO, IOApp}
+import org.http4s.blaze.server.BlazeServerBuilder
+import org.http4s.implicits._
+import http4scontrollers.FileController
 
-object YourServer {
-  def main(args: Array[String]): Unit = {
-    val httpApp = allRoutes.orNotFound
-
+object Server extends IOApp {
+  override def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO]
-      .bindHttp(8080, "localhost")
-      .withHttpApp(httpApp)
-      .serve
-      .compile
-      .drain
+      .bindHttp(9000, "0.0.0.0")
+      .withHttpApp(FileController.routes.orNotFound)
+      .resource
+      .use(_ => IO.never)
       .as(ExitCode.Success)
-  }
 }
